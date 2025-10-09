@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Tu tema de la app (déjalo como ya lo usas) -->
+    <style name="Theme.Patitasurbanas" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Tema de SplashScreen -->
+    <style name="Theme.Patitasurbanas.Splash" parent="Theme.SplashScreen">
+        <!-- fondo del splash -->
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <!-- imagen del splash -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ellipse_1</item>
+        <!-- tema que se aplica después del splash -->
+        <item name="postSplashScreenTheme">@style/Theme.Patitasurbanas</item>
+    </style>
+
+</resources>
