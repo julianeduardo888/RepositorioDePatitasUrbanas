@@ -1,3 +1,95 @@
 <resources>
     <string name="app_name">AplicacionPatitasUrbanas</string>
+
+    <string name="regresar">Regresar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="email">Email</string>
+    <string name="contrasena">Contraseña</string>
+    <string name="confirmar_contrasena">Confirmar contraseña</string>
+    <string name="usuario">Usuario</string>
+    <string name="publicar">Publicar</string>
+    <string name="editar">Editar</string>
+    <string name="guardar_cambios">Guardar Cambios</string>
+
+    <string name="pantalla_principal_titulo">Patitas Urbanas</string>
+    <string name="pantalla_principal_logo_desc">Logo Patitas Urbanas</string>
+
+    <string name="quienes_somos_titulo">Quienes somos</string>
+    <string name="quienes_somos_logo_desc">Logo</string>
+    <string name="quienes_somos_texto">Patitas urbanas es una aplicación fácil de usar que te da información, consejos para cuidar bien de tu perro, gato u otra mascota. Queremos ayudarte a ti y a tu mascota día a día para que su relación sea más fuerte y se sientan felices.</string>
+    <string name="iniciar_sesion">Iniciar sesión</string>
+
+    <string name="olvidaste_contrasena">¿Olvidaste la contraseña?</string>
+    <string name="ingresar">Ingresar</string>
+    <string name="registrarse">Registrarse</string>
+    <string name="error_login">Usuario o contraseña incorrectos</string> <string name="registrate">Regístrate</string>
+    <string name="placeholder_usuario">Tu usuario</string>
+    <string name="placeholder_email">email@ejemplo.com</string>
+    <string name="error_email_invalido">Formato de correo inválido</string>
+    <string name="error_contrasena_corta">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="error_contrasenas_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="registro_exitoso">Registro exitoso</string>
+    <string name="error_registro">Error: %1$s</string> <string name="recordar_contrasena">Recordar contraseña</string>
+    <string name="recuperar">Recuperar</string>
+    <string name="error_email_valido">El email debe ser válido.</string>
+    <string name="correo_recuperacion_enviado">Correo de recuperación enviado</string>
+    <string name="error_recuperacion">Error: %1$s</string>
+
+    <string name="salir">Salir</string>
+    <string name="publica_tus_comentarios">Publica tus comentarios</string>
+    <string name="realiza_tu_publicacion">Realiza tu publicación</string>
+    <string name="consejos_utiles">Consejos útiles</string>
+    <string name="recetas_para_tu_peludo">Recetas para tu peludo</string>
+    <string name="guarderia_zone">Guardería zone</string>
+    <string name="mira_las_publicaciones">Mira las publicaciones</string>
+    <string name="personaliza_tus_publicaciones">Personaliza tus publicaciones</string> <string name="edita_tus_publicaciones">Edita tus publicaciones</string> <string name="nuevo_consejo">Nuevo Consejo</string>
+    <string name="titulo_del_consejo">Título del consejo:</string>
+    <string name="placeholder_titulo_consejo">Título aquí:</string>
+    <string name="alias">Alias:</string>
+    <string name="placeholder_alias_consejo">Nombre aquí (opcional):</string>
+    <string name="categoria">Categoría:</string>
+    <string name="descripcion">Descripción:</string>
+    <string name="placeholder_descripcion_consejo">Escribe tu descripción:</string>
+    <string name="tipo_mascota">Tipo de mascota:</string>
+    <string name="placeholder_tipo_mascota">Ej: Perro, Gato, etc...</string>
+    <string name="publicar_flecha">Publicar  →</string>
+    <string name="consejo_publicado">¡Consejo publicado!</string>
+    <string name="error_publicar">Error al publicar: %1$s</string>
+    <string name="campos_obligatorios">Título, descripción y tipo de mascota son obligatorios</string>
+    <string name="alias_anonimo">Anónimo</string>
+
+    <string name="consejos_comunidad">Consejos de la Comunidad</string>
+    <string name="sin_consejos">Todavía no hay consejos. ¡Sé el primero en publicar!</string>
+    <string name="card_por">por %1$s</string>
+    <string name="card_categoria">Categoría:</string>
+    <string name="card_para">Para:</string>
+
+    <string name="mis_publicaciones">Mis Publicaciones</string>
+    <string name="dropdown_categoria">Categoría: %1$s</string>
+    <string name="sin_publicaciones_categoria">No tienes publicaciones en esta categoría.</string>
+    <string name="sin_publicaciones_aun">Aún no has creado ninguna publicación.</string>
+
+    <string name="editar_consejo">Editar Consejo</string>
+    <string name="label_titulo">Título</string>
+    <string name="label_alias">Alias</string>
+    <string name="label_descripcion">Descripción</string>
+    <string name="label_tipo_mascota">Tipo de Mascota</string>
+    <string name="cambios_guardados">Cambios guardados</string>
+    <string name="error_guardar">Error al guardar</string>
+
+    <string name="cat_todas">Todas</string>
+    <string name="cat_alimentacion">Alimentación</string>
+    <string name="cat_salud">Salud</string>
+    <string name="cat_comportamiento">Comportamiento</string>
+    <string name="cat_higiene">Higiene</string>
+    <string name="cat_curiosidades">Curiosidades</string>
+
+    <string name="comentarios">Comentarios</string>
+    <string name="escribe_comentario">Escribe un comentario...</string>
+    <string name="enviar_comentario">Enviar comentario</string>
+    <string name="sin_comentarios">No hay comentarios aún. ¡Sé el primero!</string>
+    <string name="error_cargar_comentarios">Error al cargar comentarios: %1$s</string>
+    <string name="error_enviar_comentario">Error al enviar comentario: %1$s</string>
+
 </resources>

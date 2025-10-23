@@ -1,5 +1,6 @@
 package com.example.aplicacionpatitasurbanas
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import com.example.aplicacionpatitasurbanas.ui.theme.FondoLilac
 import androidx.compose.ui.draw.alpha
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -31,24 +34,35 @@ import androidx.compose.ui.unit.sp
 import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun RegistroScreen(
-    onAceptar: (usuario: String, email: String, pass: String) -> Unit,
+    onRegisterSuccess: () -> Unit,
     onCancelar: () -> Unit
 ) {
     var usuario by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var pass2 by remember { mutableStateOf("") }
-    val scroll = rememberScrollState()
+    var isLoading by remember { mutableStateOf(false) }
 
-    // ── Validaciones ────────────────────────────────────────────────────────────
-    val emailError = email.isNotBlank() && !email.contains("@")
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val auth: FirebaseAuth = Firebase.auth
+
+    // --- Validaciones ---
+    val emailError = email.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val passError  = pass2.isNotBlank() && pass != pass2
+    val passLengthError = pass.isNotBlank() && pass.length < 6
     val formOk = usuario.isNotBlank() && email.isNotBlank() && pass.isNotBlank() &&
-            pass2.isNotBlank() && !emailError && !passError
+            pass2.isNotBlank() && !emailError && !passError && !passLengthError
+
     val errorColor = Color(0xFFB00020)
 
     Box(
@@ -65,8 +79,7 @@ fun RegistroScreen(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .graphicsLayer(scaleX = 2.8f, scaleY = 2.8f)
-                .alpha(0.08f),
+                .graphicsLayer(scaleX = 2.8f, scaleY = 2.8f),
             contentScale = ContentScale.Fit
         )
 
@@ -74,13 +87,13 @@ fun RegistroScreen(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .verticalScroll(scroll)
+                .verticalScroll(rememberScrollState())
                 .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Regístrate",
+                text = stringResource(id = R.string.registrate),
                 style = TextStyle(fontFamily = RubikPuddles, fontSize = 40.sp),
                 color = Color(0xFF2E2E2E),
                 textAlign = TextAlign.Center,
@@ -88,8 +101,9 @@ fun RegistroScreen(
             )
             Spacer(Modifier.height(24.dp))
 
-            // === Usuario ===
-            Text("Usuario", modifier = Modifier.fillMaxWidth(0.85f))
+            // === Usuario (Firebase no lo usa para login, pero puedes guardarlo en otro lado) ===
+            Text(stringResource(id = R.string.usuario),
+                modifier = Modifier.fillMaxWidth(0.85f))
             Spacer(Modifier.height(6.dp))
             InputBox(
                 value = usuario,
@@ -97,13 +111,13 @@ fun RegistroScreen(
                 modifier = Modifier.fillMaxWidth(0.85f),
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next,
-                placeholder = "Tu usuario"
+                placeholder = stringResource(id = R.string.placeholder_usuario)
             )
 
             Spacer(Modifier.height(12.dp))
 
             // === Email ===
-            Text("Email", modifier = Modifier.fillMaxWidth(0.85f))
+            Text(stringResource(id = R.string.email), modifier = Modifier.fillMaxWidth(0.85f))
             Spacer(Modifier.height(6.dp))
             InputBox(
                 value = email,
@@ -112,12 +126,11 @@ fun RegistroScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
                 isError = emailError,
-                placeholder = "email@ejemplo.com"
+                placeholder = stringResource(id = R.string.placeholder_email)
             )
-            // mensaje de error para email
             if (emailError) {
                 Text(
-                    text = "Formato de correo inválido (debe contener @)",
+                    text = stringResource(id = R.string.error_email_invalido),
                     color = errorColor,
                     fontSize = 12.sp,
                     modifier = Modifier
@@ -129,7 +142,7 @@ fun RegistroScreen(
             Spacer(Modifier.height(12.dp))
 
             // === Contraseña ===
-            Text("Contraseña", modifier = Modifier.fillMaxWidth(0.85f))
+            Text(stringResource(id = R.string.contrasena), modifier = Modifier.fillMaxWidth(0.85f))
             Spacer(Modifier.height(6.dp))
             InputBox(
                 value = pass,
@@ -137,13 +150,25 @@ fun RegistroScreen(
                 modifier = Modifier.fillMaxWidth(0.85f),
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next,
-                isPassword = true
+                isPassword = true,
+                isError = passLengthError
             )
+            if (passLengthError) {
+                Text(
+                    text = stringResource(id = R.string.error_contrasena_corta),
+                    color = errorColor,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .padding(top = 4.dp)
+                )
+            }
+
 
             Spacer(Modifier.height(12.dp))
 
             // === Confirmar contraseña ===
-            Text("Confirmar contraseña", modifier = Modifier.fillMaxWidth(0.85f))
+            Text(stringResource(id = R.string.confirmar_contrasena), modifier = Modifier.fillMaxWidth(0.85f))
             Spacer(Modifier.height(6.dp))
             InputBox(
                 value = pass2,
@@ -154,10 +179,9 @@ fun RegistroScreen(
                 isPassword = true,
                 isError = passError
             )
-            // mensaje de error para contraseñas
             if (passError) {
                 Text(
-                    text = "Las contraseñas no coinciden",
+                    text = stringResource(id = R.string.error_contrasenas_no_coinciden),
                     color = errorColor,
                     fontSize = 12.sp,
                     modifier = Modifier
@@ -168,39 +192,56 @@ fun RegistroScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(0.85f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // ✅ Aceptar: #E8A7B3
-                Button(
-                    onClick = { onAceptar(usuario, email, pass) },
-                    enabled = formOk,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE8A7B3),
-                        contentColor = Color(0xFF2E2E2E),
-                        disabledContainerColor = Color(0xFFE8A7B3).copy(alpha = 0.5f),
-                        disabledContentColor = Color(0xFF2E2E2E).copy(alpha = 0.6f)
-                    ),
-                    modifier = Modifier
-                        .height(48.dp)
-                        .weight(1f)
-                ) { Text("Aceptar") }
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.85f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            coroutineScope.launch {
+                                try {
+                                    auth.createUserWithEmailAndPassword(email, pass).await()
+                                    // Registro exitoso
+                                    isLoading = false
+                                    Toast.makeText(context, context.getString(R.string.registro_exitoso), Toast.LENGTH_SHORT).show()
+                                    onRegisterSuccess()
+                                } catch (e: Exception) {
+                                    // Error en el registro
+                                    isLoading = false
+                                    Toast.makeText(context, context.getString(R.string.error_registro, e.message), Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
+                        enabled = formOk,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFE8A7B3),
+                            contentColor = Color(0xFF2E2E2E),
+                            disabledContainerColor = Color(0xFFE8A7B3).copy(alpha = 0.5f),
+                            disabledContentColor = Color(0xFF2E2E2E).copy(alpha = 0.6f)
+                        ),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .weight(1f)
+                    ) { Text(stringResource(id = R.string.aceptar)) }
 
-                // ✅ Cancelar: #F8B195
-                Button(
-                    onClick = onCancelar,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF8B195),
-                        contentColor = Color(0xFF2E2E2E)
-                    ),
-                    modifier = Modifier
-                        .height(48.dp)
-                        .weight(1f)
-                ) { Text("Cancelar") }
+                    Button(
+                        onClick = onCancelar,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF8B195),
+                            contentColor = Color(0xFF2E2E2E)
+                        ),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .weight(1f)
+                    ) { Text(stringResource(id = R.string.cancelar)) }
+                }
             }
         }
     }

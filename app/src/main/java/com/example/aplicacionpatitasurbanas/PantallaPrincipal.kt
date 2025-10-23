@@ -1,6 +1,7 @@
 package com.example.aplicacionpatitasurbanas
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +42,7 @@ fun PantallaPrincipal(navController: NavHostController) {  // 👈 recibe el con
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Patitas Urbanas",
+                text = stringResource(id = R.string.pantalla_principal_titulo),
                 style = TextStyle(
                     fontFamily = RubikPuddles,
                     fontSize = 40.sp
@@ -51,10 +52,11 @@ fun PantallaPrincipal(navController: NavHostController) {  // 👈 recibe el con
             Spacer(Modifier.height(24.dp))
             Image(
                 painter = painterResource(id = R.drawable.ellipse_1),
-                contentDescription = "Logo Patitas Urbanas",
+                // ▼▼▼ CAMBIO ▼▼▼
+                contentDescription = stringResource(id = R.string.pantalla_principal_logo_desc),
                 modifier = Modifier
                     .size(324.dp)
-                    .clickable { navController.navigate("pantalla2") }, // 👈 navega
+                    .clickable { navController.navigate("pantalla2") },
                 contentScale = ContentScale.Fit
             )
         }

@@ -1,5 +1,6 @@
-package com.example.aplicacionpatitasurbanas // Puedes mantenerlo en el paquete principal si quieres, pero este es más limpio
+package com.example.aplicacionpatitasurbanas
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,18 +19,29 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.aplicacionpatitasurbanas.ui.theme.FondoLilac
 import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import androidx.compose.ui.res.stringResource
 
-// Asegúrate de que FondoLilac esté definido/importado.
+// ----------------------------------------------------------------------------------
+// PANTALLA 1: Pedir Email (VALIDACIÓN ACTUALIZADA)
+// ----------------------------------------------------------------------------------
 
-// Función auxiliar para el color de los campos de texto
 @Composable
 fun getTextFieldColors() = TextFieldDefaults.colors(
     focusedIndicatorColor = Color.Transparent,
@@ -34,6 +49,58 @@ fun getTextFieldColors() = TextFieldDefaults.colors(
     focusedContainerColor = Color.White,
     unfocusedContainerColor = Color.White
 )
+
+// Componente de TextField personalizado para todas las pantallas
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
+    isPassword: Boolean = false,
+    isError: Boolean = false,
+    placeholder: String? = null
+) {
+    val visual = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None
+    val shape = RoundedCornerShape(16.dp)
+
+    Box(
+        modifier = modifier
+            .height(50.dp)
+            .background(Color.White, shape)
+            .then(
+                if (isError) Modifier.border(2.dp, MaterialTheme.colorScheme.error, shape) else Modifier
+            )
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(color = Color(0xFF2E2E2E), fontSize = 16.sp),
+            cursorBrush = SolidColor(Color(0xFF2E2E2E)),
+            visualTransformation = visual,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction
+            ),
+            modifier = Modifier.fillMaxWidth(),
+            decorationBox = { inner ->
+                if (value.isEmpty() && !placeholder.isNullOrEmpty()) {
+                    Text(
+                        text = placeholder,
+                        color = Color(0x802E2E2E), // placeholder tenue
+                        fontSize = 16.sp
+                    )
+                }
+                inner()
+            }
+        )
+    }
+}
+
 
 // Función auxiliar para el estilo del contenedor principal
 @Composable
@@ -51,42 +118,56 @@ fun RecuperacionContenedor(content: @Composable ColumnScope.() -> Unit) {
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth(1f)
-                .graphicsLayer(scaleX = 2.8f, scaleY = 2.8f)
-                .alpha(100f),        // ✅ alpha válido (0..1)
+                .graphicsLayer(scaleX = 2.8f, scaleY = 2.8f),
             contentScale = ContentScale.Fit
         )
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(horizontal = 24.dp)
-                .widthIn(max = 500.dp),
+                .widthIn(max = 500.dp)
+                .verticalScroll(rememberScrollState()), // Permite scroll en pantallas pequeñas
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             content = content
         )
     }
 }
-
-
-
-// --- PANTALLA 1: Pedir Email ---
 @Composable
 fun RecuperarContrasenaPantalla1(
     onRecuperarClick: (String) -> Unit,
     onCancelarClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    var isEmailValid by remember { mutableStateOf(true) }
-    val validateEmail: () -> Boolean = {
-        // Validación: el email no debe estar vacío Y debe contener el símbolo '@'
-        val isValid = email.isNotBlank() && email.contains("@")
-        isEmailValid = isValid // Actualiza el estado de error
-        isValid
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val auth: FirebaseAuth = Firebase.auth
+    val context = LocalContext.current
+
+    val validateAndAttemptRecovery: () -> Unit = {
+        emailError = null
+        if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            emailError = context.getString(R.string.error_email_valido)
+        } else {
+            isLoading = true
+            coroutineScope.launch {
+                try {
+                    auth.sendPasswordResetEmail(email).await()
+                    isLoading = false
+                    Toast.makeText(context, context.getString(R.string.correo_recuperacion_enviado), Toast.LENGTH_SHORT).show()
+                    onRecuperarClick(email) // O puedes navegar directo al login
+                } catch (e: Exception) {
+                    isLoading = false
+                    emailError = context.getString(R.string.error_recuperacion, e.localizedMessage ?: "Error desconocido")
+                }
+            }
+        }
     }
 
     RecuperacionContenedor {
         Text(
-            text = "Recordar contraseña",
+            text = stringResource(id = R.string.recordar_contrasena),
             style = TextStyle(
                 fontFamily = RubikPuddles,
                 fontSize = 40.sp
@@ -95,226 +176,61 @@ fun RecuperarContrasenaPantalla1(
             modifier = Modifier.padding(bottom = 40.dp)
         )
 
-        // Campo de Email
-        Text("Email", modifier = Modifier.fillMaxWidth(0.85f))
+        Text(stringResource(id = R.string.email), modifier = Modifier.fillMaxWidth(0.85f))
         Spacer(Modifier.height(6.dp))
-        TextField(
+        CustomTextField(
             value = email,
-            onValueChange = { email = it
-                isEmailValid = true},
-            placeholder = { Text("email@ejemplo.com") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            shape = RoundedCornerShape(16.dp),
-            colors = getTextFieldColors(),
-            modifier = Modifier.fillMaxWidth(0.85f).height(50.dp),
-            isError = !isEmailValid
+            onValueChange = {
+                email = it
+                emailError = null
+            },
+            placeholder = stringResource(id = R.string.placeholder_email),
+            keyboardType = KeyboardType.Email,
+            isError = emailError != null,
+            modifier = Modifier.fillMaxWidth(0.85f)
         )
-        if (!isEmailValid) {
+        if (emailError != null) {
             Text(
-                text = "Formato de correo inválido (debe contener @)",
+                text = emailError!!,
                 color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth(0.85f).padding(top = 4.dp)
-            )
-        }
-        Spacer(Modifier.height(30.dp))
-
-        // Botones (manteniendo el ancho del 85% del contenedor)
-        Row(
-            modifier = Modifier.fillMaxWidth(0.85f),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = { if (validateEmail()) {
-                    onRecuperarClick(email) // Si es válido, navega
-                } },
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF0B4BE),
-                    contentColor = Color(0xFF2E2E2E)
-                )
-            ) { Text("Recuperar") }
-
-            OutlinedButton(
-                onClick = onCancelarClick,
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF8B195),
-                    contentColor = Color(0xFF2E2E2E)
-                ),
-                border = null
-            ) { Text("Cancelar") }
-        }
-    }
-}
-
-// --- PANTALLA 2: Confirmación de Email ---
-@Composable
-fun RecuperarContrasenaPantalla2(
-    email: String,
-    onConfirmarClick: () -> Unit,
-    onCancelarClick: () -> Unit
-) {
-    RecuperacionContenedor {
-        Text(
-            text = "Recordar contraseña (verificacion)",
-            style = TextStyle(
-                fontFamily = RubikPuddles,
-                fontSize = 40.sp
-            ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 40.dp)
-        )
-
-        // Muestra el Email (como un campo de texto no editable)
-        Text("Email", modifier = Modifier.fillMaxWidth(0.85f))
-        Spacer(Modifier.height(6.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(50.dp)
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(text = email)
-        }
-
-        Spacer(Modifier.height(30.dp))
-
-        // Botones
-        Row(
-            modifier = Modifier.fillMaxWidth(0.85f),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = onConfirmarClick,
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF0B4BE),
-                    contentColor = Color(0xFF2E2E2E)
-                )
-            ) { Text("Aceptar") }
-
-            OutlinedButton(
-                onClick = onCancelarClick,
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF8B195),
-                    contentColor = Color(0xFF2E2E2E)
-                ),
-                border = null
-            ) { Text("Cancelar") }
-        }
-    }
-}
-
-// --- PANTALLA 3: Establecer Nueva Contraseña ---
-@Composable
-fun RecuperarContrasenaPantalla3(
-    onAceptarClick: (nuevaContrasena: String) -> Unit,
-    onCancelarClick: () -> Unit
-) {
-    var contrasenaNueva by remember { mutableStateOf("") }
-    var confirmarContrasena by remember { mutableStateOf("") }
-
-    // Validaciones
-    val errorColor = MaterialTheme.colorScheme.error
-    val passError = confirmarContrasena.isNotBlank() && contrasenaNueva != confirmarContrasena
-    val formOk = contrasenaNueva.isNotBlank() && confirmarContrasena.isNotBlank() && !passError
-
-    RecuperacionContenedor {
-        Text(
-            text = "Recordar contraseña",
-            style = TextStyle(fontFamily = RubikPuddles, fontSize = 40.sp),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 40.dp)
-        )
-
-        // Contraseña
-        Text("Contraseña", modifier = Modifier.fillMaxWidth(0.85f))
-        Spacer(Modifier.height(6.dp))
-        TextField(
-            value = contrasenaNueva,
-            onValueChange = { contrasenaNueva = it },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            shape = RoundedCornerShape(16.dp),
-            colors = getTextFieldColors(),
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(50.dp)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Confirmar contraseña
-        Text("Confirmar contraseña", modifier = Modifier.fillMaxWidth(0.85f))
-        Spacer(Modifier.height(6.dp))
-        TextField(
-            value = confirmarContrasena,
-            onValueChange = { confirmarContrasena = it },
-            singleLine = true,
-            isError = passError,
-            visualTransformation = PasswordVisualTransformation(),
-            shape = RoundedCornerShape(16.dp),
-            colors = getTextFieldColors(),
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(50.dp)
-                .then(
-                    if (passError)
-                        Modifier.border(2.dp, errorColor, RoundedCornerShape(16.dp))
-                    else Modifier
-                )
-        )
-        // Mensaje de error
-        if (passError) {
-            Text(
-                text = "Las contraseñas no coinciden",
-                color = errorColor,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .padding(top = 4.dp)
             )
         }
-
         Spacer(Modifier.height(30.dp))
 
-        // Botones
-        Row(
-            modifier = Modifier.fillMaxWidth(0.85f),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = { onAceptarClick(contrasenaNueva) },
-                enabled = formOk, // ✅ solo habilitado cuando todo OK
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF0B4BE),
-                    contentColor = Color(0xFF2E2E2E),
-                    disabledContainerColor = Color(0xFFF0B4BE).copy(alpha = 0.5f),
-                    disabledContentColor = Color(0xFF2E2E2E).copy(alpha = 0.6f)
-                ),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp)
-            ) { Text("Aceptar") }
+        if (isLoading) {
+            CircularProgressIndicator()
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(0.85f),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = validateAndAttemptRecovery,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.width(130.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF0B4BE),
+                        contentColor = Color(0xFF2E2E2E)
+                    )
+                ) { Text(stringResource(id = R.string.recuperar)) }
 
-            OutlinedButton(
-                onClick = onCancelarClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF8B195),
-                    contentColor = Color(0xFF2E2E2E)
-                ),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.width(130.dp),
-                border = null
-            ) { Text("Cancelar") }
+                OutlinedButton(
+                    onClick = onCancelarClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.width(130.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF8B195),
+                        contentColor = Color(0xFF2E2E2E)
+                    ),
+                    border = null
+                ) {
+                    Text(stringResource(id = R.string.cancelar))
+                }
+            }
         }
     }
 }

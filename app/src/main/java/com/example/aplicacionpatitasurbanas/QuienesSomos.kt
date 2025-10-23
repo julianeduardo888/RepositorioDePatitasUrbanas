@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.aplicacionpatitasurbanas.ui.theme.FondoLilac
 import androidx.compose.ui.text.TextStyle
 import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun QuienesSomos(
@@ -45,7 +46,7 @@ fun QuienesSomos(
             // Logo
             Image(
                 painter = painterResource(id = R.drawable.ellipse_1),
-                contentDescription = "Logo",
+                contentDescription = stringResource(id = R.string.quienes_somos_logo_desc),
                 modifier = Modifier.size(200.dp),
                 contentScale = ContentScale.Fit
             )
@@ -54,7 +55,7 @@ fun QuienesSomos(
 
             // Título
             Text(
-                text = "Quienes somos",
+                text = stringResource(id = R.string.quienes_somos_titulo),
                 style = TextStyle(
                     fontFamily = RubikPuddles,
                     fontSize = 40.sp
@@ -68,10 +69,10 @@ fun QuienesSomos(
 
             // Párrafo con Inter un poco más grande
             Text(
-                text = "Patitas urbanas, nace como una solución digital accesible, diseñada para ofrecer información confiable, recomendaciones personalizadas y recordatorios útiles que faciliten la crianza responsable de perros, gatos y otras mascotas domésticas. Su objetivo es acompañar a los dueños en el día a día, ayudándoles a fortalecer el vínculo con sus animales y asegurando que reciban la atención y el amor que merecen.",
+                text = stringResource(id = R.string.quienes_somos_texto),
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp), // 👈 texto más grande
                 color = Color(0xFF2E2E2E),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Justify,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -88,7 +89,7 @@ fun QuienesSomos(
                     .height(48.dp)
                     .widthIn(min = 180.dp)
             ) {
-                Text("Iniciar sesión", style = TextStyle(
+                Text(stringResource(id = R.string.iniciar_sesion), style = TextStyle(
                     fontSize = 20.sp
                 )
                 )

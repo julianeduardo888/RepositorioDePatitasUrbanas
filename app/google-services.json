@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "600810654773",
+    "project_id": "aplicacionpatitasurbanas",
+    "storage_bucket": "aplicacionpatitasurbanas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600810654773:android:6465308155727ed080357c",
+        "android_client_info": {
+          "package_name": "com.example.aplicacionpatitasurbanas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxnYA1EtiEtqDDAhzIc9QCrK0q4dyBAQ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
