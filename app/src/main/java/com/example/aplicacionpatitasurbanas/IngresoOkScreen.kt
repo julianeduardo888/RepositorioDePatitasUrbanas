@@ -27,9 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
 import androidx.compose.ui.res.stringResource
-// ▼▼▼ IMPORTACIONES NUEVAS ▼▼▼
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+// ▼▼▼ IMPORTACIÓN NUEVA ▼▼▼
+import androidx.activity.compose.BackHandler
 
 @Composable
 fun IngresoOkScreen(
@@ -53,10 +54,10 @@ fun IngresoOkScreen(
 
     var expanded by remember { mutableStateOf(false) }
 
-    // ▼▼▼ NUEVO ESTADO PARA EL DIÁLOGO ▼▼▼
+    // Estado para el diálogo
     var showExitDialog by remember { mutableStateOf(false) }
 
-    // ▼▼▼ NUEVO: DIÁLOGO DE CONFIRMACIÓN DE SALIDA ▼▼▼
+    // ▼▼▼ NUEVO: DIÁLOGO DE CONFIRMACIÓN DE SALIDA (Sin cambios) ▼▼▼
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -68,20 +69,26 @@ fun IngresoOkScreen(
                         showExitDialog = false
                         onSalir() // Llama a la función original de salir (que desloguea)
                     },
-                    // Usamos el mismo color rojo que el de "Borrar" para consistencia
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
                 ) {
-                    Text(stringResource(id = R.string.salir)) // Reusa el string "Salir"
+                    Text(stringResource(id = R.string.salir))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showExitDialog = false }
                 ) {
-                    Text(stringResource(id = R.string.cancelar)) // Reusa el string "Cancelar"
+                    Text(stringResource(id = R.string.cancelar))
                 }
             }
         )
+    }
+
+    // ▼▼▼ NUEVO: HANDLER PARA EL BOTÓN "ATRÁS" DEL SISTEMA ▼▼▼
+    // Cuando el usuario presione "Atrás", esto interceptará la acción
+    // y en lugar de salir, mostrará el diálogo.
+    BackHandler {
+        showExitDialog = true
     }
 
 
@@ -98,7 +105,7 @@ fun IngresoOkScreen(
                 .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp)
         ) {
             TextButton(
-                // ▼▼▼ CAMBIO: onSalir ahora muestra el diálogo ▼▼▼
+                // La lógica del botón ahora es la misma que la del BackHandler
                 onClick = { showExitDialog = true },
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.textButtonColors(
@@ -109,7 +116,7 @@ fun IngresoOkScreen(
             ) { Text(stringResource(id = R.string.salir)) }
         }
 
-        // Contenido centrado
+        // Contenido centrado (Sin cambios)
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -174,7 +181,7 @@ fun IngresoOkScreen(
     }
 }
 
-// Helpers
+// Helpers (Sin cambios)
 @Composable
 private fun SectionTitle(text: String, color: Color) {
     Text(
