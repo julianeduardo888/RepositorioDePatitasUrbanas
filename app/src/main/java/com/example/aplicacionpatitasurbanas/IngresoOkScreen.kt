@@ -27,14 +27,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
 import androidx.compose.ui.res.stringResource
+// ▼▼▼ IMPORTACIONES NUEVAS ▼▼▼
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 
 @Composable
 fun IngresoOkScreen(
     onSalir: () -> Unit = {},
     onConsejosClick: () -> Unit = {},
-    onRecetasClick: () -> Unit = {},
+    onCrearRecetaClick: () -> Unit = {},
     onGuarderiaClick: () -> Unit = {},
     onVerConsejosClick: () -> Unit = {},
+    onVerRecetasClick: () -> Unit = {},
     onEditarPublicacionesClick: () -> Unit = {}
 ) {
     // Colores
@@ -49,6 +53,38 @@ fun IngresoOkScreen(
 
     var expanded by remember { mutableStateOf(false) }
 
+    // ▼▼▼ NUEVO ESTADO PARA EL DIÁLOGO ▼▼▼
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // ▼▼▼ NUEVO: DIÁLOGO DE CONFIRMACIÓN DE SALIDA ▼▼▼
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text(stringResource(id = R.string.confirmar_salida_titulo)) },
+            text = { Text(stringResource(id = R.string.confirmar_salida_texto)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExitDialog = false
+                        onSalir() // Llama a la función original de salir (que desloguea)
+                    },
+                    // Usamos el mismo color rojo que el de "Borrar" para consistencia
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
+                ) {
+                    Text(stringResource(id = R.string.salir)) // Reusa el string "Salir"
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(stringResource(id = R.string.cancelar)) // Reusa el string "Cancelar"
+                }
+            }
+        )
+    }
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -62,7 +98,8 @@ fun IngresoOkScreen(
                 .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp)
         ) {
             TextButton(
-                onClick = onSalir,
+                // ▼▼▼ CAMBIO: onSalir ahora muestra el diálogo ▼▼▼
+                onClick = { showExitDialog = true },
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = salirColor,
@@ -109,7 +146,7 @@ fun IngresoOkScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     ActionRow(bg = pinkSoft,   emoji = "🐾", stringResource(id = R.string.consejos_utiles))        { onConsejosClick() }
-                    ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onRecetasClick() }
+                    ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onCrearRecetaClick() }
                     ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onGuarderiaClick() }
                 }
             }
@@ -122,9 +159,8 @@ fun IngresoOkScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // ▼▼▼ ESTE BOTÓN AHORA NAVEGA A LA LISTA DE CONSEJOS ▼▼▼
                 ActionRow(bg = pinkSoft,   emoji = "🐾", text = stringResource(id = R.string.consejos_utiles))        { onVerConsejosClick() }
-                ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onRecetasClick() }
+                ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onVerRecetasClick() }
                 ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onGuarderiaClick() }
             }
 

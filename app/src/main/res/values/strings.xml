@@ -92,4 +92,35 @@
     <string name="error_cargar_comentarios">Error al cargar comentarios: %1$s</string>
     <string name="error_enviar_comentario">Error al enviar comentario: %1$s</string>
 
+    <string name="nueva_receta">Nueva Receta</string>
+    <string name="nombre_receta">Nombre de la receta:</string>
+    <string name="placeholder_nombre_receta">Ej: Galletas de Hígado</string>
+    <string name="alias_opcional">Alias (Opcional):</string>
+    <string name="placeholder_alias_receta">Ej: ChefCanino</string>
+    <string name="tipo_receta">Tipo de receta:</string>
+    <string name="ingredientes">Ingredientes:</string>
+    <string name="placeholder_ingredientes">Ingresa los ingredientes...</string>
+    <string name="preparacion">Descripción de la preparación:</string>
+    <string name="placeholder_preparacion">Describe la preparación...</string>
+
+    <string name="recetas_comunidad">Recetas de la Comunidad</string>
+    <string name="sin_recetas">Aún no hay recetas publicadas</string>
+    <string name="card_tipo">Tipo:</string>
+
+    <string name="tipo_publicacion">Tipo de publicación: %1$s</string>
+    <string name="mis_consejos">Mis Consejos</string>
+    <string name="mis_recetas">Mis Recetas</string>
+    <string name="sin_recetas_propias">Aún no has publicado recetas.</string>
+    <string name="sin_consejos_propios">Aún no has publicado consejos.</string>
+    <string name="editar_receta">Editar Receta</string>
+
+    <string name="borrar">Borrar</string>
+    <string name="confirmar_eliminacion_titulo">Confirmar eliminación</string>
+    <string name="confirmar_eliminacion_texto">¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.</string>
+    <string name="publicacion_eliminada">Publicación eliminada</string>
+    <string name="error_eliminar">Error al eliminar: %1$s</string>
+
+    <string name="confirmar_salida_titulo">Confirmar Salida</string>
+    <string name="confirmar_salida_texto">¿Seguro que quieres salir de la aplicación?</string>
+
 </resources>
