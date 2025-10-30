@@ -5,6 +5,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+// ▼▼▼ IMPORTACIONES NUEVAS ▼▼▼
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+// ▲▲▲ FIN DE IMPORTACIONES NUEVAS ▲▲▲
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +22,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+// ▼▼▼ IMPORTACIONES NUEVAS ▼▼▼
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+// ▲▲▲ FIN DE IMPORTACIONES NUEVAS ▲▲▲
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +49,9 @@ fun InicioSesion(
     var contrasena by remember { mutableStateOf("") }
     var errorLogin by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+
+    // ▼▼▼ NUEVO ESTADO PARA VISIBILIDAD ▼▼▼
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -96,7 +109,9 @@ fun InicioSesion(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White
                 ),
-                modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(50.dp)
             )
 
             Spacer(Modifier.height(16.dp))
@@ -104,11 +119,14 @@ fun InicioSesion(
             Text(stringResource(id = R.string.contrasena), style = MaterialTheme.typography.bodyLarge, color = Color(0xFF2E2E2E),
                 modifier = Modifier.fillMaxWidth(0.85f))
             Spacer(Modifier.height(6.dp))
+
+            // ▼▼▼ CAMBIOS EN EL TEXTFIELD DE CONTRASEÑA ▼▼▼
             TextField(
                 value = contrasena,
                 onValueChange = { contrasena = it; errorLogin = null },
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), // Especifica el tipo de teclado
                 shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
@@ -116,8 +134,24 @@ fun InicioSesion(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White
                 ),
-                modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
+                // --- ICONO AÑADIDO A LA IZQUIERDA (leadingIcon) ---
+                leadingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else
+                        Icons.Filled.VisibilityOff
+
+                    val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, description)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(50.dp)
             )
+            // ▲▲▲ FIN DE CAMBIOS ▲▲▲
 
             Spacer(Modifier.height(8.dp))
 
@@ -173,7 +207,9 @@ fun InicioSesion(
                         disabledContainerColor = Color(0xFFF0B4BE).copy(alpha = 0.5f),
                         disabledContentColor = Color(0xFF2E2E2E).copy(alpha = 0.6f)
                     ),
-                    modifier = Modifier.height(48.dp).widthIn(min = 200.dp)
+                    modifier = Modifier
+                        .height(48.dp)
+                        .widthIn(min = 200.dp)
                 ) { Text(stringResource(id = R.string.ingresar), style = TextStyle(fontSize = 18.sp)) }
             }
 
@@ -187,7 +223,9 @@ fun InicioSesion(
                     containerColor = Color(0xFFF8B195),
                     contentColor = Color(0xFF2E2E2E)
                 ),
-                modifier = Modifier.height(48.dp).widthIn(min = 200.dp)
+                modifier = Modifier
+                    .height(48.dp)
+                    .widthIn(min = 200.dp)
             ) { Text(stringResource(id = R.string.registrarse), style = TextStyle(fontSize = 18.sp)) }
         }
     }
