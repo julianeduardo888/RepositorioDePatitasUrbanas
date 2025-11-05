@@ -2,6 +2,10 @@
 
 Esta es una aplicación móvil para Android, desarrollada en Kotlin con Jetpack Compose y Firebase. Permite a los usuarios compartir y descubrir consejos, recetas y guarderías para sus mascotas en una comunidad.
 
+## 0. App
+
+Se subio al git la aplicacion donde la encuentras en la parte izquierda
+
 ## 1. Rama Funcional
 
 La última versión funcional y estable del proyecto se encuentra en la rama: **`main`**
