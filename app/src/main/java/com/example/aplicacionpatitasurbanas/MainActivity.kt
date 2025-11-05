@@ -13,8 +13,6 @@ import androidx.navigation.navArgument
 import com.example.aplicacionpatitasurbanas.ui.theme.PatitasurbanasTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-
-// Importaciones para el placeholder (ya las tenías)
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.background
@@ -23,8 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.aplicacionpatitasurbanas.ui.theme.FondoLilac
-// ▼▼▼ ¡Asegúrate de que esta importación también esté! ▼▼▼
-// (Es necesaria para la pantalla que reemplaza el placeholder)
 import com.example.aplicacionpatitasurbanas.GuarderiaComentariosScreen
 
 class MainActivity : ComponentActivity() {
@@ -90,7 +86,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- RUTA DE MIS PUBLICACIONES ---
+                    // --- RUTA DE MIS PUBLICACIONES (ACTUALIZADA) ---
                     composable("mis_publicaciones") {
                         MisPublicacionesScreen(
                             onRegresar = { navController.popBackStack() },
@@ -99,6 +95,10 @@ class MainActivity : ComponentActivity() {
                             },
                             onEditarReceta = { recetaId ->
                                 navController.navigate("editar_receta/$recetaId")
+                            },
+                            // ▼▼▼ NUEVA NAVEGACIÓN AÑADIDA ▼▼▼
+                            onEditarGuarderia = { guarderiaId ->
+                                navController.navigate("editar_guarderia/$guarderiaId")
                             }
                         )
                     }
@@ -154,7 +154,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // ▼▼▼ NUEVAS RUTAS DE GUARDERÍA ▼▼▼
+                    // --- RUTAS DE GUARDERÍA ---
                     composable("nueva_guarderia") {
                         NuevaGuarderiaScreen(
                             onPublicarSuccess = { navController.popBackStack() },
@@ -174,15 +174,25 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("guarderiaId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val guarderiaId = backStackEntry.arguments?.getString("guarderiaId") ?: ""
-
-                        // ▼▼▼ CAMBIO FINAL: Placeholder reemplazado ▼▼▼
                         GuarderiaComentariosScreen(
                             guarderiaId = guarderiaId,
                             onRegresar = { navController.popBackStack() }
                         )
-                        // ▲▲▲ FIN DEL CAMBIO ▲▲▲
                     }
-                    // ▲▲▲ FIN DE NUEVAS RUTAS ▲▲▲
+
+                    // ▼▼▼ NUEVA RUTA DE EDICIÓN AÑADIDA ▼▼▼
+                    composable(
+                        route = "editar_guarderia/{guarderiaId}",
+                        arguments = listOf(navArgument("guarderiaId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val guarderiaId = backStackEntry.arguments?.getString("guarderiaId") ?: ""
+                        EditarGuarderiaScreen(
+                            guarderiaId = guarderiaId,
+                            onGuardado = { navController.popBackStack() },
+                            onRegresar = { navController.popBackStack() }
+                        )
+                    }
+                    // ▲▲▲ FIN DE NUEVA RUTA ▲▲▲
 
 
                     // --- RUTAS DE AUTENTICACIÓN ---
@@ -211,7 +221,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("recuperar_contrasena_1") {
-                        // Error de typo corregido:
                         RecuperarContrasenaPantalla1(
                             onRecuperarClick = { navController.popBackStack() },
                             onCancelarClick = { navController.popBackStack() }

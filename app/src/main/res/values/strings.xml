@@ -123,4 +123,6 @@
     <string name="confirmar_salida_titulo">Confirmar Salida</string>
     <string name="confirmar_salida_texto">¿Seguro que quieres salir de la aplicación?</string>
 
+    <string name="mis_guarderias">Mis Guarderías</string>
+
 </resources>

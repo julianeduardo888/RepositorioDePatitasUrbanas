@@ -32,110 +32,107 @@ import kotlinx.coroutines.tasks.await
 fun MisPublicacionesScreen(
     onRegresar: () -> Unit,
     onEditarConsejo: (String) -> Unit,
-    onEditarReceta: (String) -> Unit
+    onEditarReceta: (String) -> Unit,
+    onEditarGuarderia: (String) -> Unit // ▼▼▼ NUEVO PARÁMETRO ▼▼▼
 ) {
     // --- Estados para las listas ---
     var todosMisConsejos by remember { mutableStateOf<List<ConsejoConId>>(emptyList()) }
     var todosMisRecetas by remember { mutableStateOf<List<RecetaConId>>(emptyList()) }
+    var todosMisGuarderias by remember { mutableStateOf<List<GuarderiaConId>>(emptyList()) } // ▼▼▼ NUEVO ESTADO ▼▼▼
     var isLoading by remember { mutableStateOf(true) }
 
-    // ▼▼▼ NUEVOS ESTADOS PARA BORRAR ▼▼▼
+    // --- Estados para Borrar ---
     var isDeleting by remember { mutableStateOf(false) }
-    // Par de (Tipo: "consejo" o "receta", ID del documento)
     var showDeleteDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val db = Firebase.firestore
 
-    // --- Estados para el Dropdown ---
+    // --- Estados para el Dropdown (ACTUALIZADO) ---
     val tiposPublicacion = listOf(
         stringResource(id = R.string.mis_consejos),
-        stringResource(id = R.string.mis_recetas)
+        stringResource(id = R.string.mis_recetas),
+        stringResource(id = R.string.mis_guarderias) // ▼▼▼ NUEVA OPCIÓN ▼▼▼
     )
     var tipoSeleccionado by remember { mutableStateOf(tiposPublicacion[0]) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    // --- Carga AMBOS tipos de publicaciones al inicio ---
+    // --- Carga TODOS los tipos de publicaciones al inicio ---
     LaunchedEffect(Unit) {
         val currentUser = Firebase.auth.currentUser
         if (currentUser == null) {
             isLoading = false
             return@LaunchedEffect
         }
+        val uid = currentUser.uid
 
         // Cargar Consejos
         try {
             val resultConsejos = db.collection("consejos")
-                .whereEqualTo("autorId", currentUser.uid)
+                .whereEqualTo("autorId", uid)
                 .orderBy("fechaCreacion", Query.Direction.DESCENDING)
                 .get().await()
-            todosMisConsejos = resultConsejos.documents.mapNotNull { doc ->
-                ConsejoConId(
-                    id = doc.id,
-                    titulo = doc.getString("titulo") ?: "",
-                    alias = doc.getString("alias") ?: "",
-                    categoria = doc.getString("categoria") ?: "",
-                    descripcion = doc.getString("descripcion") ?: "",
-                    tipoMascota = doc.getString("tipoMascota") ?: "",
-                    autorId = doc.getString("autorId")
-                )
-            }
+            todosMisConsejos = resultConsejos.toObjects(ConsejoConId::class.java)
         } catch (e: Exception) { /* ... */ }
 
         // Cargar Recetas
         try {
             val resultRecetas = db.collection("recetas")
-                .whereEqualTo("autorId", currentUser.uid)
+                .whereEqualTo("autorId", uid)
                 .orderBy("fechaCreacion", Query.Direction.DESCENDING)
                 .get().await()
-            todosMisRecetas = resultRecetas.documents.mapNotNull { doc ->
-                RecetaConId(
-                    id = doc.id,
-                    nombre = doc.getString("nombre") ?: "",
-                    alias = doc.getString("alias") ?: "",
-                    tipoReceta = doc.getString("tipoReceta") ?: "",
-                    tipoMascota = doc.getString("tipoMascota") ?: "",
-                    ingredientes = doc.getString("ingredientes") ?: "",
-                    preparacion = doc.getString("preparacion") ?: "",
-                    autorId = doc.getString("autorId")
-                )
-            }
+            todosMisRecetas = resultRecetas.toObjects(RecetaConId::class.java)
         } catch (e: Exception) { /* ... */ }
+
+        // ▼▼▼ NUEVA CARGA DE GUARDERÍAS ▼▼▼
+        try {
+            val resultGuarderias = db.collection("guarderias")
+                .whereEqualTo("autorId", uid)
+                .orderBy("fechaCreacion", Query.Direction.DESCENDING)
+                .get().await()
+            todosMisGuarderias = resultGuarderias.toObjects(GuarderiaConId::class.java)
+        } catch (e: Exception) { /* ... */ }
+        // ▲▲▲ FIN DE NUEVA CARGA ▲▲▲
 
         isLoading = false
     }
 
-    // ▼▼▼ NUEVA FUNCIÓN PARA MANEJAR EL BORRADO ▼▼▼
+    // --- Función para manejar el BORRADO (ACTUALIZADA) ---
     fun handleDelete(tipo: String, id: String) {
         isDeleting = true
         coroutineScope.launch {
             try {
-                // NOTA IMPORTANTE:
-                // Esto borra el documento principal (consejo o receta).
-                // NO borra las subcolecciones (como 'comentarios').
-                // Para eso, se necesitaría una Cloud Function de Firebase.
+                // ▼▼▼ Lógica de borrado actualizada ▼▼▼
+                val collectionPath = when (tipo) {
+                    "consejo" -> "consejos"
+                    "receta" -> "recetas"
+                    "guarderia" -> "guarderias"
+                    else -> throw IllegalArgumentException("Tipo desconocido")
+                }
 
-                val collectionPath = if (tipo == "consejo") "consejos" else "recetas"
+                // (NOTA: Esto aún no borra subcolecciones como 'comentarios')
                 db.collection(collectionPath).document(id).delete().await()
 
-                // Actualizar la UI localmente para que el ítem desaparezca
-                if (tipo == "consejo") {
-                    todosMisConsejos = todosMisConsejos.filterNot { it.id == id }
-                } else {
-                    todosMisRecetas = todosMisRecetas.filterNot { it.id == id }
+                // Actualizar la UI localmente
+                when (tipo) {
+                    "consejo" -> todosMisConsejos = todosMisConsejos.filterNot { it.id == id }
+                    "receta" -> todosMisRecetas = todosMisRecetas.filterNot { it.id == id }
+                    "guarderia" -> todosMisGuarderias = todosMisGuarderias.filterNot { it.id == id }
                 }
+                // ▲▲▲ FIN DE LÓGICA ACTUALIZADA ▲▲▲
+
                 Toast.makeText(context, context.getString(R.string.publicacion_eliminada), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(context, context.getString(R.string.error_eliminar, e.message), Toast.LENGTH_LONG).show()
             } finally {
                 isDeleting = false
-                showDeleteDialog = null // Cierra el diálogo
+                showDeleteDialog = null
             }
         }
     }
 
 
-    // ▼▼▼ NUEVO: DIÁLOGO DE CONFIRMACIÓN ▼▼▼
+    // --- Diálogo de Confirmación (Sin cambios) ---
     if (showDeleteDialog != null) {
         AlertDialog(
             onDismissRequest = { if (!isDeleting) showDeleteDialog = null },
@@ -165,7 +162,7 @@ fun MisPublicacionesScreen(
     }
 
     // --- UI Principal ---
-    Box(modifier = Modifier.fillMaxSize()) { // Box para superponer el indicador de carga
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -229,8 +226,9 @@ fun MisPublicacionesScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Lógica de Vistas (ACTUALIZADA) ---
             if (isLoading) {
-                // No mostramos nada, el indicador de carga se encarga
+                // El indicador de carga se superpone (ver abajo)
             } else if (tipoSeleccionado == stringResource(id = R.string.mis_consejos)) {
                 // --- Muestra Consejos ---
                 if (todosMisConsejos.isEmpty()) {
@@ -241,13 +239,12 @@ fun MisPublicacionesScreen(
                             ConsejoEditableCard(
                                 consejo = consejo,
                                 onEditar = { onEditarConsejo(consejo.id) },
-                                // ▼▼▼ Pasamos la acción para mostrar el diálogo ▼▼▼
                                 onBorrar = { showDeleteDialog = "consejo" to consejo.id }
                             )
                         }
                     }
                 }
-            } else {
+            } else if (tipoSeleccionado == stringResource(id = R.string.mis_recetas)) {
                 // --- Muestra Recetas ---
                 if (todosMisRecetas.isEmpty()) {
                     Text(stringResource(id = R.string.sin_recetas_propias))
@@ -257,28 +254,42 @@ fun MisPublicacionesScreen(
                             RecetaEditableCard(
                                 receta = receta,
                                 onEditar = { onEditarReceta(receta.id) },
-                                // ▼▼▼ Pasamos la acción para mostrar el diálogo ▼▼▼
                                 onBorrar = { showDeleteDialog = "receta" to receta.id }
                             )
                         }
                     }
                 }
+            } else if (tipoSeleccionado == stringResource(id = R.string.mis_guarderias)) {
+                // ▼▼▼ NUEVO BLOQUE PARA GUARDERÍAS ▼▼▼
+                if (todosMisGuarderias.isEmpty()) {
+                    Text("Aún no has publicado guarderías.") // Puedes añadir esto a strings.xml
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(todosMisGuarderias, key = { it.id }) { guarderia ->
+                            GuarderiaEditableCard(
+                                guarderia = guarderia,
+                                onEditar = { onEditarGuarderia(guarderia.id) },
+                                onBorrar = { showDeleteDialog = "guarderia" to guarderia.id }
+                            )
+                        }
+                    }
+                }
+                // ▲▲▲ FIN DE NUEVO BLOQUE ▲▲▲
             }
         }
 
-        // ▼▼▼ Indicador de carga (para carga inicial Y borrado) ▼▼▼
         if (isLoading || isDeleting) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
 }
 
-// --- Card de Consejo (ACTUALIZADO) ---
+// --- Card de Consejo (Sin cambios) ---
 @Composable
 fun ConsejoEditableCard(
     consejo: ConsejoConId,
     onEditar: () -> Unit,
-    onBorrar: () -> Unit // <-- Nuevo parámetro
+    onBorrar: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -305,32 +316,29 @@ fun ConsejoEditableCard(
             )
             Spacer(Modifier.height(16.dp))
 
-            // ▼▼▼ CAMBIO: Reemplazado Box con Row para dos botones ▼▼▼
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botón Editar
                 Button(
                     onClick = onEditar,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFF0B4BE),
                         contentColor = Color.Black
                     ),
-                    modifier = Modifier.weight(1f) // Ocupa la mitad del espacio
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(stringResource(id = R.string.editar))
                 }
 
-                // Botón Borrar
                 Button(
                     onClick = onBorrar,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF8B195), // Color naranja/rojizo
+                        containerColor = Color(0xFFF8B195),
                         contentColor = Color.Black
                     ),
-                    modifier = Modifier.weight(1f) // Ocupa la otra mitad
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(stringResource(id = R.string.borrar))
                 }
@@ -339,12 +347,12 @@ fun ConsejoEditableCard(
     }
 }
 
-// --- Card de Receta (ACTUALIZADO) ---
+// --- Card de Receta (Sin cambios) ---
 @Composable
 fun RecetaEditableCard(
     receta: RecetaConId,
     onEditar: () -> Unit,
-    onBorrar: () -> Unit // <-- Nuevo parámetro
+    onBorrar: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -375,13 +383,78 @@ fun RecetaEditableCard(
             )
             Spacer(Modifier.height(16.dp))
 
-            // ▼▼▼ CAMBIO: Reemplazado Box con Row para dos botones ▼▼▼
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botón Editar
+                Button(
+                    onClick = onEditar,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF0B4BE),
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(id = R.string.editar))
+                }
+                Button(
+                    onClick = onBorrar,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF8B195),
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(id = R.string.borrar))
+                }
+            }
+        }
+    }
+}
+
+// ▼▼▼ NUEVO CARD PARA GUARDERÍA ▼▼▼
+@Composable
+fun GuarderiaEditableCard(
+    guarderia: GuarderiaConId,
+    onEditar: () -> Unit,
+    onBorrar: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                guarderia.nombre,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+
+            Text("Ubicación:", fontWeight = FontWeight.Bold)
+            Text(
+                guarderia.ubicacion,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2
+            )
+            Spacer(Modifier.height(4.dp))
+
+            Text("Servicio:", fontWeight = FontWeight.Bold)
+            Text(
+                guarderia.servicio,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2
+            )
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Button(
                     onClick = onEditar,
                     colors = ButtonDefaults.buttonColors(
@@ -393,7 +466,6 @@ fun RecetaEditableCard(
                     Text(stringResource(id = R.string.editar))
                 }
 
-                // Botón Borrar
                 Button(
                     onClick = onBorrar,
                     colors = ButtonDefaults.buttonColors(
