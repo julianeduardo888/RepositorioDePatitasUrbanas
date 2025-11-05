@@ -1,5 +1,10 @@
 package com.example.aplicacionpatitasurbanas
 
+// ▼▼▼ NUEVAS IMPORTACIONES REQUERIDAS ▼▼▼
+import android.content.Intent
+import android.net.Uri
+// ▲▲▲ FIN DE NUEVAS IMPORTACIONES ▲▲▲
+
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -34,7 +39,7 @@ import com.google.firebase.ktx.Firebase
 @Composable
 fun GuarderiaListScreen(
     onRegresar: () -> Unit,
-    onVerComentarios: (String) -> Unit // Para navegar a los comentarios de la guardería
+    onVerComentarios: (String) -> Unit
 ) {
     var guarderias by remember { mutableStateOf<List<GuarderiaConId>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -75,7 +80,7 @@ fun GuarderiaListScreen(
         val db = Firebase.firestore
         var listenerRegistration: ListenerRegistration? = null
 
-        listenerRegistration = db.collection("guarderias") // <-- Colección "guarderias"
+        listenerRegistration = db.collection("guarderias")
             .orderBy("fechaCreacion", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (!isScreenActive) return@addSnapshotListener
@@ -94,6 +99,7 @@ fun GuarderiaListScreen(
                             id = doc.id,
                             nombre = doc.getString("nombre") ?: "",
                             ubicacion = doc.getString("ubicacion") ?: "",
+                            direccion = doc.getString("direccion") ?: "", // ▼▼▼ LEEMOS EL NUEVO CAMPO ▼▼▼
                             servicio = doc.getString("servicio") ?: "",
                             calificacion = doc.getString("calificacion") ?: "",
                             tratoMascotas = doc.getString("tratoMascotas") ?: "",
@@ -139,7 +145,7 @@ fun GuarderiaListScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Guardería Zone", // Título de tu imagen
+                text = "Guardería Zone",
                 style = TextStyle(fontFamily = RubikPuddles, fontSize = 32.sp),
                 color = Color(0xFF2E2E2E),
                 textAlign = TextAlign.Center,
@@ -175,7 +181,6 @@ fun GuarderiaListScreen(
     }
 }
 
-// --- Card Específico para Guarderías ---
 @Composable
 fun GuarderiaCard(
     guarderia: GuarderiaConId,
@@ -184,6 +189,9 @@ fun GuarderiaCard(
     onCommentClick: () -> Unit
 ) {
     val isLiked = currentUserId != null && guarderia.likedBy.contains(currentUserId)
+
+    // ▼▼▼ NECESITAMOS EL CONTEXTO PARA EL INTENT DE MAPS ▼▼▼
+    val context = LocalContext.current
 
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -199,11 +207,10 @@ fun GuarderiaCard(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-            // (En tu imagen no se muestra el autor, así que lo omitimos aquí)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Mostramos los campos de tu imagen image_44f004.png
             InfoRow(label = "Ubicación o barrio:", value = guarderia.ubicacion)
+            InfoRow(label = "Dirección:", value = guarderia.direccion) // ▼▼▼ MOSTRAMOS LA DIRECCIÓN ▼▼▼
             InfoRow(label = "Tipo de servicios:", value = guarderia.servicio)
             InfoRow(label = "Tipo de calificación:", value = guarderia.calificacion)
             InfoRow(label = "Trato hacia las mascotas:", value = guarderia.tratoMascotas, maxLines = 4)
@@ -215,8 +222,9 @@ fun GuarderiaCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start // Los ponemos juntos
+                horizontalArrangement = Arrangement.SpaceBetween // Para alinear el botón de mapa a la derecha
             ) {
+                // --- Grupo de Like y Comentarios (a la izquierda) ---
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onLikeToggle) {
                         Icon(
@@ -226,11 +234,9 @@ fun GuarderiaCard(
                         )
                     }
                     Text(guarderia.likeCount.toString())
-                }
 
-                Spacer(modifier = Modifier.width(16.dp)) // Espacio entre botones
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onCommentClick) {
                         Icon(
                             imageVector = Icons.Filled.Comment,
@@ -238,8 +244,29 @@ fun GuarderiaCard(
                             tint = Color.Gray
                         )
                     }
-                    Text(guarderia.commentCount.toString()) // Usamos el nuevo campo
+                    Text(guarderia.commentCount.toString())
                 }
+
+                // ▼▼▼ NUEVO BOTÓN PARA VER EN MAPA (a la derecha) ▼▼▼
+                TextButton(
+                    onClick = {
+                        // Creamos el Intent para Google Maps
+                        val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(guarderia.direccion)}")
+                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                        mapIntent.setPackage("com.google.android.apps.maps") // Fuerza a usar Google Maps
+
+                        try {
+                            context.startActivity(mapIntent)
+                        } catch (e: Exception) {
+                            // Por si no tiene Google Maps instalado
+                            Toast.makeText(context, "No se pudo abrir Google Maps.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    enabled = guarderia.direccion.isNotBlank() // Solo se activa si hay una dirección
+                ) {
+                    Text("Ver en Mapa")
+                }
+                // ▲▲▲ FIN DE NUEVO BOTÓN ▲▲▲
             }
         }
     }

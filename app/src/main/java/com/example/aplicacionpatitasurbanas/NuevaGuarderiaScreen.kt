@@ -31,14 +31,15 @@ fun NuevaGuarderiaScreen(
     onPublicarSuccess: () -> Unit,
     onRegresar: () -> Unit
 ) {
-    // --- Estados para los campos (basados en image_447028.png) ---
+    // --- Estados para los campos ---
     var nombre by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
+    var direccion by remember { mutableStateOf("") } // ▼▼▼ NUEVO ESTADO ▼▼▼
     var tratoMascotas by remember { mutableStateOf("") }
     var comentarios by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
-    // --- Listas y estados para Dropdowns (basado en image_447063.png) ---
+    // --- Listas y estados para Dropdowns ---
     val servicios = listOf(
         "Guardería de dia", "Hotel / Hospedaje", "Paseos",
         "Peluqueria", "Entrenamiento"
@@ -54,12 +55,14 @@ fun NuevaGuarderiaScreen(
     var isCalificacionExp by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    // Validamos los campos principales
-    val formIsValid = nombre.isNotBlank() && ubicacion.isNotBlank() && tratoMascotas.isNotBlank()
+
+    // ▼▼▼ CAMBIO: Añadimos 'direccion' a la validación ▼▼▼
+    val formIsValid = nombre.isNotBlank() && ubicacion.isNotBlank() && tratoMascotas.isNotBlank() && direccion.isNotBlank()
 
     fun handlePublicar() {
         if (!formIsValid) {
-            Toast.makeText(context, "Nombre, ubicación y trato son obligatorios", Toast.LENGTH_SHORT).show()
+            // ▼▼▼ CAMBIO: Mensaje de validación actualizado ▼▼▼
+            Toast.makeText(context, "Nombre, ubicación, dirección y trato son obligatorios", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -70,6 +73,7 @@ fun NuevaGuarderiaScreen(
         val nuevaGuarderia = Guarderia(
             nombre = nombre,
             ubicacion = ubicacion,
+            direccion = direccion, // ▼▼▼ NUEVO CAMPO A GUARDAR ▼▼▼
             servicio = servicioSel,
             calificacion = calificacionSel,
             tratoMascotas = tratoMascotas,
@@ -77,7 +81,7 @@ fun NuevaGuarderiaScreen(
             autorId = currentUser?.uid
         )
 
-        db.collection("guarderias") // <-- Nueva colección "guarderias"
+        db.collection("guarderias")
             .add(nuevaGuarderia)
             .addOnSuccessListener {
                 isLoading = false
@@ -113,7 +117,7 @@ fun NuevaGuarderiaScreen(
             Spacer(modifier = Modifier.height(70.dp))
 
             Text(
-                text = "Nueva Guardería", // De image_447028.png
+                text = "Nueva Guardería",
                 style = TextStyle(fontFamily = RubikPuddles, fontSize = 40.sp),
                 color = Color(0xFF2E2E2E)
             )
@@ -131,7 +135,7 @@ fun NuevaGuarderiaScreen(
                     onValueChange = { nombre = it },
                     placeholder = { Text("Nombre aquí:") },
                     shape = RoundedCornerShape(12.dp),
-                    colors = getTextFieldColors(), // Reutilizamos la función global
+                    colors = getTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
@@ -146,6 +150,19 @@ fun NuevaGuarderiaScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
+
+                // ▼▼▼ NUEVO CAMPO DE TEXTO PARA DIRECCIÓN ▼▼▼
+                Text("Dirección (para el mapa):", fontWeight = FontWeight.Bold, color = Color(0xFF2E2E2E))
+                TextField(
+                    value = direccion,
+                    onValueChange = { direccion = it },
+                    placeholder = { Text("Ej: Calle 50 #10-20") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = getTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+                // ▲▲▲ FIN DE NUEVO CAMPO ▲▲▲
 
                 // --- Dropdown Tipo de Servicios ---
                 Text("Tipo de servicios:", fontWeight = FontWeight.Bold, color = Color(0xFF2E2E2E))

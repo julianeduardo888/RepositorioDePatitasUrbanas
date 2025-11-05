@@ -6,7 +6,8 @@ import java.util.Date
 // Clase para guardar una Guardería nueva en Firestore
 data class Guarderia(
     val nombre: String = "",
-    val ubicacion: String = "",
+    val ubicacion: String = "", // Barrio
+    val direccion: String = "", // ▼▼▼ NUEVO CAMPO ▼▼▼
     val servicio: String = "",
     val calificacion: String = "", // Calificación del POST (ej: "Super Recomendable")
     val tratoMascotas: String = "",
@@ -16,14 +17,15 @@ data class Guarderia(
     val fechaCreacion: Date? = null,
     val likeCount: Int = 0,
     val likedBy: List<String> = emptyList(),
-    val commentCount: Int = 0 // ▼▼▼ NUEVO CAMPO ▼▼▼
+    val commentCount: Int = 0
 )
 
 // Clase para leer una Guardería (con su ID) de Firestore
 data class GuarderiaConId(
     val id: String = "",
     val nombre: String = "",
-    val ubicacion: String = "",
+    val ubicacion: String = "", // Barrio
+    val direccion: String = "", // ▼▼▼ NUEVO CAMPO ▼▼▼
     val servicio: String = "",
     val calificacion: String = "",
     val tratoMascotas: String = "",
@@ -31,10 +33,10 @@ data class GuarderiaConId(
     val autorId: String? = null,
     val likeCount: Int = 0,
     val likedBy: List<String> = emptyList(),
-    val commentCount: Int = 0 // ▼▼▼ NUEVO CAMPO ▼▼▼
+    val commentCount: Int = 0
 )
 
-// ▼▼▼ NUEVAS CLASES PARA RESEÑAS CON ESTRELLAS ▼▼▼
+// --- Clases de Comentarios (estas se quedan igual) ---
 
 // Clase para guardar un Comentario/Reseña de Guardería
 data class GuarderiaComentario(
