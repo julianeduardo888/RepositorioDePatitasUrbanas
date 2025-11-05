@@ -29,7 +29,6 @@ import com.example.aplicacionpatitasurbanas.ui.theme.RubikPuddles
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-// ▼▼▼ IMPORTACIÓN NUEVA ▼▼▼
 import androidx.activity.compose.BackHandler
 
 @Composable
@@ -37,7 +36,10 @@ fun IngresoOkScreen(
     onSalir: () -> Unit = {},
     onConsejosClick: () -> Unit = {},
     onCrearRecetaClick: () -> Unit = {},
-    onGuarderiaClick: () -> Unit = {},
+    // ▼▼▼ CAMBIO AQUÍ: Reemplazamos onGuarderiaClick por dos lambdas ▼▼▼
+    onCrearGuarderiaClick: () -> Unit = {},
+    onVerGuarderiasClick: () -> Unit = {},
+    // ▲▲▲ FIN DEL CAMBIO ▲▲▲
     onVerConsejosClick: () -> Unit = {},
     onVerRecetasClick: () -> Unit = {},
     onEditarPublicacionesClick: () -> Unit = {}
@@ -53,11 +55,8 @@ fun IngresoOkScreen(
     val textDark   = Color(0xFF2E2E2E)
 
     var expanded by remember { mutableStateOf(false) }
-
-    // Estado para el diálogo
     var showExitDialog by remember { mutableStateOf(false) }
 
-    // ▼▼▼ NUEVO: DIÁLOGO DE CONFIRMACIÓN DE SALIDA (Sin cambios) ▼▼▼
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -67,7 +66,7 @@ fun IngresoOkScreen(
                 Button(
                     onClick = {
                         showExitDialog = false
-                        onSalir() // Llama a la función original de salir (que desloguea)
+                        onSalir()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
                 ) {
@@ -84,9 +83,6 @@ fun IngresoOkScreen(
         )
     }
 
-    // ▼▼▼ NUEVO: HANDLER PARA EL BOTÓN "ATRÁS" DEL SISTEMA ▼▼▼
-    // Cuando el usuario presione "Atrás", esto interceptará la acción
-    // y en lugar de salir, mostrará el diálogo.
     BackHandler {
         showExitDialog = true
     }
@@ -98,14 +94,12 @@ fun IngresoOkScreen(
             .background(fondo)
             .padding(horizontal = 24.dp)
     ) {
-        // Botón Salir (arriba-izq)
         Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp)
         ) {
             TextButton(
-                // La lógica del botón ahora es la misma que la del BackHandler
                 onClick = { showExitDialog = true },
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.textButtonColors(
@@ -116,7 +110,6 @@ fun IngresoOkScreen(
             ) { Text(stringResource(id = R.string.salir)) }
         }
 
-        // Contenido centrado (Sin cambios)
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -135,7 +128,6 @@ fun IngresoOkScreen(
 
             SectionTitle(stringResource(id = R.string.publica_tus_comentarios), textDark)
 
-            // ——— Lista desplegable ———
             DropRow(
                 bg = greenMint,
                 emoji = "🐶",
@@ -144,7 +136,6 @@ fun IngresoOkScreen(
                 onToggle = { expanded = !expanded }
             )
 
-            // Contenido del dropdown
             AnimatedVisibility(visible = expanded) {
                 Column(
                     modifier = Modifier
@@ -154,13 +145,13 @@ fun IngresoOkScreen(
                 ) {
                     ActionRow(bg = pinkSoft,   emoji = "🐾", stringResource(id = R.string.consejos_utiles))        { onConsejosClick() }
                     ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onCrearRecetaClick() }
-                    ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onGuarderiaClick() }
+                    // ▼▼▼ CAMBIO AQUÍ: Este botón ahora usa 'onCrearGuarderiaClick' ▼▼▼
+                    ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onCrearGuarderiaClick() }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // ——— Mira las publicaciones ———
             SectionTitle(stringResource(id = R.string.mira_las_publicaciones), textDark)
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -168,7 +159,8 @@ fun IngresoOkScreen(
             ) {
                 ActionRow(bg = pinkSoft,   emoji = "🐾", text = stringResource(id = R.string.consejos_utiles))        { onVerConsejosClick() }
                 ActionRow(bg = aquaSoft,   emoji = "🦴", text = stringResource(id = R.string.recetas_para_tu_peludo)) { onVerRecetasClick() }
-                ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onGuarderiaClick() }
+                // ▼▼▼ CAMBIO AQUÍ: Este botón ahora usa 'onVerGuarderiasClick' ▼▼▼
+                ActionRow(bg = yellowSoft, emoji = "🐕", text = stringResource(id = R.string.guarderia_zone))          { onVerGuarderiasClick() }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -181,7 +173,7 @@ fun IngresoOkScreen(
     }
 }
 
-// Helpers (Sin cambios)
+// Helpers (No cambian)
 @Composable
 private fun SectionTitle(text: String, color: Color) {
     Text(

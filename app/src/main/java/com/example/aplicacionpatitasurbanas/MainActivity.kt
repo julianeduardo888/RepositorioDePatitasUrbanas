@@ -14,6 +14,19 @@ import com.example.aplicacionpatitasurbanas.ui.theme.PatitasurbanasTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
+// Importaciones para el placeholder (ya las tenías)
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.example.aplicacionpatitasurbanas.ui.theme.FondoLilac
+// ▼▼▼ ¡Asegúrate de que esta importación también esté! ▼▼▼
+// (Es necesaria para la pantalla que reemplaza el placeholder)
+import com.example.aplicacionpatitasurbanas.GuarderiaComentariosScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -45,7 +58,9 @@ class MainActivity : ComponentActivity() {
                             onVerConsejosClick = { navController.navigate("consejos_lista") },
                             onCrearRecetaClick = { navController.navigate("nueva_receta") },
                             onVerRecetasClick = { navController.navigate("recetas_lista") },
-                            onEditarPublicacionesClick = { navController.navigate("mis_publicaciones") }
+                            onEditarPublicacionesClick = { navController.navigate("mis_publicaciones") },
+                            onCrearGuarderiaClick = { navController.navigate("nueva_guarderia") },
+                            onVerGuarderiasClick = { navController.navigate("guarderias_lista") }
                         )
                     }
 
@@ -75,11 +90,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- RUTA DE MIS PUBLICACIONES (ACTUALIZADA) ---
+                    // --- RUTA DE MIS PUBLICACIONES ---
                     composable("mis_publicaciones") {
                         MisPublicacionesScreen(
                             onRegresar = { navController.popBackStack() },
-                            // Pasa ambas funciones de edición
                             onEditarConsejo = { consejoId ->
                                 navController.navigate("editar_consejo/$consejoId")
                             },
@@ -89,7 +103,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // --- RUTA DE EDITAR CONSEJO (Existente) ---
+                    // --- RUTA DE EDITAR CONSEJO ---
                     composable(
                         route = "editar_consejo/{consejoId}",
                         arguments = listOf(navArgument("consejoId") { type = NavType.StringType })
@@ -128,8 +142,6 @@ class MainActivity : ComponentActivity() {
                             onRegresar = { navController.popBackStack() }
                         )
                     }
-
-                    // --- ¡NUEVA RUTA DE EDITAR RECETA! ---
                     composable(
                         route = "editar_receta/{recetaId}",
                         arguments = listOf(navArgument("recetaId") { type = NavType.StringType })
@@ -142,6 +154,36 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    // ▼▼▼ NUEVAS RUTAS DE GUARDERÍA ▼▼▼
+                    composable("nueva_guarderia") {
+                        NuevaGuarderiaScreen(
+                            onPublicarSuccess = { navController.popBackStack() },
+                            onRegresar = { navController.popBackStack() }
+                        )
+                    }
+                    composable("guarderias_lista") {
+                        GuarderiaListScreen(
+                            onRegresar = { navController.popBackStack() },
+                            onVerComentarios = { guarderiaId ->
+                                navController.navigate("guarderia_comentarios/$guarderiaId")
+                            }
+                        )
+                    }
+                    composable(
+                        route = "guarderia_comentarios/{guarderiaId}",
+                        arguments = listOf(navArgument("guarderiaId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val guarderiaId = backStackEntry.arguments?.getString("guarderiaId") ?: ""
+
+                        // ▼▼▼ CAMBIO FINAL: Placeholder reemplazado ▼▼▼
+                        GuarderiaComentariosScreen(
+                            guarderiaId = guarderiaId,
+                            onRegresar = { navController.popBackStack() }
+                        )
+                        // ▲▲▲ FIN DEL CAMBIO ▲▲▲
+                    }
+                    // ▲▲▲ FIN DE NUEVAS RUTAS ▲▲▲
+
 
                     // --- RUTAS DE AUTENTICACIÓN ---
                     composable(route = "pantalla2") {
@@ -149,7 +191,6 @@ class MainActivity : ComponentActivity() {
                             onIniciarSesion = { navController.navigate("inicio_sesion") }
                         )
                     }
-                    // ... (El resto de tus rutas de inicio_sesion, registro, etc. se quedan igual)
                     composable(route = "inicio_sesion") {
                         InicioSesion(
                             onForgotPasswordClick = {
@@ -170,6 +211,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("recuperar_contrasena_1") {
+                        // Error de typo corregido:
                         RecuperarContrasenaPantalla1(
                             onRecuperarClick = { navController.popBackStack() },
                             onCancelarClick = { navController.popBackStack() }
