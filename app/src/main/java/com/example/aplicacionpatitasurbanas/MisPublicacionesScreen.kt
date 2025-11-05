@@ -33,31 +33,28 @@ fun MisPublicacionesScreen(
     onRegresar: () -> Unit,
     onEditarConsejo: (String) -> Unit,
     onEditarReceta: (String) -> Unit,
-    onEditarGuarderia: (String) -> Unit // ▼▼▼ NUEVO PARÁMETRO ▼▼▼
+    onEditarGuarderia: (String) -> Unit
 ) {
     // --- Estados para las listas ---
     var todosMisConsejos by remember { mutableStateOf<List<ConsejoConId>>(emptyList()) }
     var todosMisRecetas by remember { mutableStateOf<List<RecetaConId>>(emptyList()) }
-    var todosMisGuarderias by remember { mutableStateOf<List<GuarderiaConId>>(emptyList()) } // ▼▼▼ NUEVO ESTADO ▼▼▼
+    var todosMisGuarderias by remember { mutableStateOf<List<GuarderiaConId>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // --- Estados para Borrar ---
     var isDeleting by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val db = Firebase.firestore
 
-    // --- Estados para el Dropdown (ACTUALIZADO) ---
     val tiposPublicacion = listOf(
         stringResource(id = R.string.mis_consejos),
         stringResource(id = R.string.mis_recetas),
-        stringResource(id = R.string.mis_guarderias) // ▼▼▼ NUEVA OPCIÓN ▼▼▼
+        stringResource(id = R.string.mis_guarderias)
     )
     var tipoSeleccionado by remember { mutableStateOf(tiposPublicacion[0]) }
     var isExpanded by remember { mutableStateOf(false) }
 
-    // --- Carga TODOS los tipos de publicaciones al inicio ---
     LaunchedEffect(Unit) {
         val currentUser = Firebase.auth.currentUser
         if (currentUser == null) {
@@ -66,43 +63,88 @@ fun MisPublicacionesScreen(
         }
         val uid = currentUser.uid
 
-        // Cargar Consejos
+        // Cargar Consejos (Tu código original - seguro)
         try {
             val resultConsejos = db.collection("consejos")
                 .whereEqualTo("autorId", uid)
                 .orderBy("fechaCreacion", Query.Direction.DESCENDING)
                 .get().await()
-            todosMisConsejos = resultConsejos.toObjects(ConsejoConId::class.java)
+            todosMisConsejos = resultConsejos.documents.mapNotNull { doc ->
+                ConsejoConId(
+                    id = doc.id,
+                    titulo = doc.getString("titulo") ?: "",
+                    alias = doc.getString("alias") ?: "",
+                    categoria = doc.getString("categoria") ?: "",
+                    descripcion = doc.getString("descripcion") ?: "",
+                    tipoMascota = doc.getString("tipoMascota") ?: "",
+                    autorId = doc.getString("autorId")
+                    // (Los campos de like/comment no se muestran aquí, así que está bien)
+                )
+            }
         } catch (e: Exception) { /* ... */ }
 
-        // Cargar Recetas
+        // Cargar Recetas (Tu código original - seguro)
         try {
             val resultRecetas = db.collection("recetas")
                 .whereEqualTo("autorId", uid)
                 .orderBy("fechaCreacion", Query.Direction.DESCENDING)
                 .get().await()
-            todosMisRecetas = resultRecetas.toObjects(RecetaConId::class.java)
+            todosMisRecetas = resultRecetas.documents.mapNotNull { doc ->
+                RecetaConId(
+                    id = doc.id,
+                    nombre = doc.getString("nombre") ?: "",
+                    alias = doc.getString("alias") ?: "",
+                    tipoReceta = doc.getString("tipoReceta") ?: "",
+                    tipoMascota = doc.getString("tipoMascota") ?: "",
+                    ingredientes = doc.getString("ingredientes") ?: "",
+                    preparacion = doc.getString("preparacion") ?: "",
+                    autorId = doc.getString("autorId")
+                )
+            }
         } catch (e: Exception) { /* ... */ }
 
-        // ▼▼▼ NUEVA CARGA DE GUARDERÍAS ▼▼▼
+        // ▼▼▼ CAMBIO IMPORTANTE AQUÍ ▼▼▼
+        // Reemplazamos el toObjects() por un mapeo manual seguro
         try {
             val resultGuarderias = db.collection("guarderias")
                 .whereEqualTo("autorId", uid)
                 .orderBy("fechaCreacion", Query.Direction.DESCENDING)
                 .get().await()
-            todosMisGuarderias = resultGuarderias.toObjects(GuarderiaConId::class.java)
-        } catch (e: Exception) { /* ... */ }
-        // ▲▲▲ FIN DE NUEVA CARGA ▲▲▲
+
+            todosMisGuarderias = resultGuarderias.documents.mapNotNull { doc ->
+                // Mapeo manual seguro, igual que en GuarderiaListScreen
+                val likeCount = doc.getLong("likeCount")?.toInt() ?: 0
+                val commentCount = doc.getLong("commentCount")?.toInt() ?: 0
+
+                GuarderiaConId(
+                    id = doc.id, // <-- Obtenemos el ID real
+                    nombre = doc.getString("nombre") ?: "",
+                    ubicacion = doc.getString("ubicacion") ?: "",
+                    direccion = doc.getString("direccion") ?: "",
+                    servicio = doc.getString("servicio") ?: "",
+                    calificacion = doc.getString("calificacion") ?: "",
+                    tratoMascotas = doc.getString("tratoMascotas") ?: "",
+                    comentarios = doc.getString("comentarios") ?: "",
+                    autorId = doc.getString("autorId"),
+                    likeCount = likeCount,
+                    commentCount = commentCount,
+                    likedBy = doc.get("likedBy") as? List<String> ?: emptyList()
+                )
+            }
+        } catch (e: Exception) {
+            // Informar si el índice sigue faltando
+            Toast.makeText(context, "Error al cargar guarderías: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+        // ▲▲▲ FIN DEL CAMBIO ▲▲▲
 
         isLoading = false
     }
 
-    // --- Función para manejar el BORRADO (ACTUALIZADA) ---
+    // --- Función para manejar el BORRADO (Sin cambios) ---
     fun handleDelete(tipo: String, id: String) {
         isDeleting = true
         coroutineScope.launch {
             try {
-                // ▼▼▼ Lógica de borrado actualizada ▼▼▼
                 val collectionPath = when (tipo) {
                     "consejo" -> "consejos"
                     "receta" -> "recetas"
@@ -110,16 +152,13 @@ fun MisPublicacionesScreen(
                     else -> throw IllegalArgumentException("Tipo desconocido")
                 }
 
-                // (NOTA: Esto aún no borra subcolecciones como 'comentarios')
                 db.collection(collectionPath).document(id).delete().await()
 
-                // Actualizar la UI localmente
                 when (tipo) {
                     "consejo" -> todosMisConsejos = todosMisConsejos.filterNot { it.id == id }
                     "receta" -> todosMisRecetas = todosMisRecetas.filterNot { it.id == id }
                     "guarderia" -> todosMisGuarderias = todosMisGuarderias.filterNot { it.id == id }
                 }
-                // ▲▲▲ FIN DE LÓGICA ACTUALIZADA ▲▲▲
 
                 Toast.makeText(context, context.getString(R.string.publicacion_eliminada), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -161,7 +200,7 @@ fun MisPublicacionesScreen(
         )
     }
 
-    // --- UI Principal ---
+    // --- UI Principal (Sin cambios) ---
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -191,7 +230,6 @@ fun MisPublicacionesScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Dropdown de Tipo de Publicación ---
             ExposedDropdownMenuBox(
                 expanded = isExpanded,
                 onExpandedChange = { isExpanded = it }
@@ -226,11 +264,9 @@ fun MisPublicacionesScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Lógica de Vistas (ACTUALIZADA) ---
             if (isLoading) {
-                // El indicador de carga se superpone (ver abajo)
+                // El indicador de carga se superpone
             } else if (tipoSeleccionado == stringResource(id = R.string.mis_consejos)) {
-                // --- Muestra Consejos ---
                 if (todosMisConsejos.isEmpty()) {
                     Text(stringResource(id = R.string.sin_consejos_propios))
                 } else {
@@ -245,7 +281,6 @@ fun MisPublicacionesScreen(
                     }
                 }
             } else if (tipoSeleccionado == stringResource(id = R.string.mis_recetas)) {
-                // --- Muestra Recetas ---
                 if (todosMisRecetas.isEmpty()) {
                     Text(stringResource(id = R.string.sin_recetas_propias))
                 } else {
@@ -260,9 +295,8 @@ fun MisPublicacionesScreen(
                     }
                 }
             } else if (tipoSeleccionado == stringResource(id = R.string.mis_guarderias)) {
-                // ▼▼▼ NUEVO BLOQUE PARA GUARDERÍAS ▼▼▼
                 if (todosMisGuarderias.isEmpty()) {
-                    Text("Aún no has publicado guarderías.") // Puedes añadir esto a strings.xml
+                    Text("Aún no has publicado guarderías.")
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(todosMisGuarderias, key = { it.id }) { guarderia ->
@@ -274,7 +308,6 @@ fun MisPublicacionesScreen(
                         }
                     }
                 }
-                // ▲▲▲ FIN DE NUEVO BLOQUE ▲▲▲
             }
         }
 
@@ -413,7 +446,7 @@ fun RecetaEditableCard(
     }
 }
 
-// ▼▼▼ NUEVO CARD PARA GUARDERÍA ▼▼▼
+// --- Card de Guardería (Sin cambios) ---
 @Composable
 fun GuarderiaEditableCard(
     guarderia: GuarderiaConId,
